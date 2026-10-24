@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DisasterGuard | Area Risk Analysis</title>
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="/">
+        <span class="brand-icon">DG</span>
+        <span>DisasterGuard<small>AREA RISK INTELLIGENCE</small></span>
+    </a>
+    <span class="demo-label">ML DEMONSTRATION</span>
+</header>
+
+<main class="container">
+    <section class="hero">
+        <div class="hero-copy">
+            <p class="eyebrow">DISASTER SUSCEPTIBILITY ANALYSIS</p>
+            <h1>Understand area risk.<br><span>Prepare with insight.</span></h1>
+            <p>
+                Explore how environmental conditions and economic
+                vulnerability can be used in a machine learning risk
+                classification project.
+            </p>
+            <a class="hero-link" href="#predict">Analyse an area ↓</a>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+            <div class="visual-circle circle-one"></div>
+            <div class="visual-circle circle-two"></div>
+            <div class="visual-center">DG</div>
+            <div class="visual-caption">RISK<br>ANALYSIS</div>
+        </div>
+    </section>
+
+    <section class="notice">
+        <strong>Demonstration only</strong>
+        <p>
+            This version uses synthetic data and illustrative labels.
+            Predictions are not verified real-world risk estimates,
+            official warnings, or evacuation guidance.
+        </p>
+    </section>
+
+    <section class="section-heading" id="predict">
+        <div>
+            <p class="eyebrow">01 / AREA DETAILS</p>
+            <h2>Analyse an area</h2>
+            <p>Enter values within the ranges shown below.</p>
+        </div>
+    </section>
+
+    {% if error %}
+    <div class="alert" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/" class="form-card">
+        <div class="form-grid">
+            <div class="field full">
+                <label for="area_name">Area name (optional)</label>
+                <input id="area_name" name="area_name" type="text"
+                       maxlength="100" placeholder="e.g. Sample Area"
+                       value="{{ form_data.area_name }}">
+            </div>
+
+            <div class="field">
+                <label for="rainfall_mm">Rainfall (mm)</label>
+                <input id="rainfall_mm" name="rainfall_mm" type="number"
+                       min="20" max="500" step="0.1" required
+                       value="{{ form_data.rainfall_mm }}">
+                <small>Range: 20–500 mm</small>
+            </div>
+
+            <div class="field">
+                <label for="elevation_m">Elevation (metres)</label>
+                <input id="elevation_m" name="elevation_m" type="number"
+                       min="0" max="1200" step="0.1" required
+                       value="{{ form_data.elevation_m }}">
+                <small>Range: 0–1,200 m</small>
+            </div>
+
+            <div class="field">
+                <label for="slope_degrees">Slope (degrees)</label>
+                <input id="slope_degrees" name="slope_degrees" type="number"
+                       min="0" max="45" step="0.1" required
+                       value="{{ form_data.slope_degrees }}">
+                <small>Range: 0–45°</small>
+            </div>
+
+            <div class="field">
+                <label for="river_distance_km">Distance from river (km)</label>
+                <input id="river_distance_km" name="river_distance_km"
+                       type="number" min="0.1" max="15" step="0.01" required
+                       value="{{ form_data.river_distance_km }}">
+                <small>Range: 0.1–15 km</small>
+            </div>
+
+            <div class="field">
+                <label for="historical_events">Past disaster events</label>
+                <input id="historical_events" name="historical_events"
+                       type="number" min="0" max="7" step="1" required
+                       value="{{ form_data.historical_events }}">
+                <small>Range: 0–7 events</small>
+            </div>
+
+            <div class="field">
+                <label for="population_density">Population density</label>
+                <input id="population_density" name="population_density"
+                       type="number" min="100" max="12000" step="1" required
+                       value="{{ form_data.population_density }}">
+                <small>Illustrative density index: 100–12,000</small>
+            </div>
+
+            <div class="field full">
+                <label for="economic_vulnerability">
+                    Economic vulnerability (1–10)
+                </label>
+                <input id="economic_vulnerability"
+                       name="economic_vulnerability" type="number"
+                       min="1" max="10" step="0.1" required
+                       value="{{ form_data.economic_vulnerability }}">
+                <small>
+                    Higher values represent greater assumed vulnerability
+                    in this demonstration.
+                </small>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="primary-button">
+                Analyse risk
+            </button>
+            <button type="reset" class="reset-button">Reset fields</button>
+        </div>
+    </form>
+
+    {% if result %}
+    <section class="results" aria-live="polite">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">02 / PREDICTION RESULT</p>
+                <h2>{{ result.area_name }}</h2>
+            </div>
+        </div>
+
+        <div class="result-card">
+            <div>
+                <p class="eyebrow">MODEL CLASSIFICATION</p>
+                <h3 class="risk-{{ result.risk|lower }}">
+                    {{ result.risk }} illustrative risk
+                </h3>
+                <p>{{ result.description }}</p>
+            </div>
+            <div class="score">
+                <strong>{{ result.probability }}%</strong>
+                <span>Model confidence<br>in this class</span>
+            </div>
+        </div>
+
+        <p class="fine-print">
+            This percentage is the model's class probability, not the
+            probability that a disaster will occur. It is not calibrated
+            against real-world disaster observations.
+        </p>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>Class probabilities</h3>
+                <p>Model output for this submitted area.</p>
+                <canvas id="probabilityChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Illustrative dataset distribution</h3>
+                <p>Distribution of generated training labels.</p>
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+
+        <script>
+            const probabilityLabels = {{ result.probabilities | map(attribute='label') | list | tojson }};
+            const probabilityValues = {{ result.probabilities | map(attribute='value') | list | tojson }};
+            const distributionLabels = {{ distribution.keys() | list | tojson }};
+            const distributionValues = {{ distribution.values() | list | tojson }};
+
+            new Chart(document.getElementById('probabilityChart'), {
+                type: 'bar',
+                data: {
+                    labels: probabilityLabels,
+                    datasets: [{
+                        label: 'Model class probability (%)',
+                        data: probabilityValues,
+                        backgroundColor: ['#8ca98b', '#d5a34d', '#c76c62'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: 'Percentage' }
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('distributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: distributionLabels,
+                    datasets: [{
+                        data: distributionValues,
+                        backgroundColor: ['#8ca98b', '#d5a34d', '#c76c62'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        </script>
+    </section>
+    {% endif %}
+
+    <section class="records">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">03 / DATA EXPLORER</p>
+                <h2>Sample training records</h2>
+                <p>
+                    Examples from the synthetic dataset, not verified
+                    reports of real areas or disasters.
+                </p>
+            </div>
+            <div class="record-count">
+                {{ total_records }}<small>generated records</small>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rainfall</th>
+                        <th>Elevation</th>
+                        <th>Slope</th>
+                        <th>River distance</th>
+                        <th>Past events</th>
+                        <th>Vulnerability</th>
+                        <th>Label</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sample_records %}
+                    <tr>
+                        <td>{{ row.rainfall_mm }} mm</td>
+                        <td>{{ row.elevation_m }} m</td>
+                        <td>{{ row.slope_degrees }}°</td>
+                        <td>{{ row.river_distance_km }} km</td>
+                        <td>{{ row.historical_events }}</td>
+                        <td>{{ row.economic_vulnerability }}/10</td>
+                        <td>
+                            <span class="tag tag-{{ row.risk_level|lower }}">
+                                {{ row.risk_level }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="method-card">
+        <p class="eyebrow">PROJECT METHODOLOGY</p>
+        <h2>How the prediction works</h2>
+        <div class="method-grid">
+            <div>
+                <span>01</span>
+                <h3>Data generation</h3>
+                <p>Create illustrative environmental and vulnerability records.</p>
+            </div>
+            <div>
+                <span>02</span>
+                <h3>Model training</h3>
+                <p>Train a Random Forest classifier on generated labels.</p>
+            </div>
+            <div>
+                <span>03</span>
+                <h3>Risk classification</h3>
+                <p>Classify input values as low, medium or high under this demo.</p>
+            </div>
+        </div>
+        <p class="fine-print">
+            A high test score on synthetic labels does not prove real-world
+            predictive accuracy. Reliable deployment requires verified
+            historical labels, geographical validation and expert review.
+        </p>
+    </section>
+</main>
+
+<footer class="footer">
+    DisasterGuard · Educational machine learning demonstration
+</footer>
+</body>
+</html>
